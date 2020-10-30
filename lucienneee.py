@@ -58,6 +58,7 @@ def indexiets():
             reader=DirectoryReader.open(store)
             searcher = IndexSearcher(reader)
             query = QueryParser("zontent", StandardAnalyzer()).parse("panda")
+
             topDocs = searcher.search(query, 50)
 
             print(topDocs.scoreDocs)
