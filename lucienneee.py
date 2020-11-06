@@ -17,8 +17,8 @@ from lxml import etree
 lucene.initVM(vmargs=['-Djava.awt.headless=true'])
 
 
-infile="../stackoverflow.com-Posts/Posts.xml"
-context = etree.iterparse(infile)
+infile="../../../andy/Desktop/InformationRetrieval/pom.xml"
+
 counter=0
 
 def openStore():
@@ -34,7 +34,12 @@ def getWriter(store, analyzer=None, create=False):
     writer = IndexWriter(store, config)
 
     return writer
-def indexiets(context,TitlemagNoneZijn):
+def indexiets(infile,TitlemagNoneZijn, limit = 10000):
+    try:
+        context = etree.iterparse(infile)
+    except:
+        print("cannot open file: {}".format(infile))
+        return
     store=openStore()
     writer=None
     p=re.compile(r'<.*?>')
@@ -72,16 +77,32 @@ def indexiets(context,TitlemagNoneZijn):
         del context
         writer.close()
 
-def query(searchTerm):
+def preProcessSearchTerm(searchTerm):
+    fuzzySearchTerm = ""
+    listOfWords=searchTerm.split()
+    for word in listOfWords:
+
+        if len(word) < 5:
+            percent = (len(word)-1)/len(word)
+        elif len(word) < 10:
+            percent = (len(word)-2)/len(word)
+        else:
+            percent = (len(word) - 3) / len(word)
+        fuzzySearchTerm += "{}~{} ".format(word, percent-0.05)
+
+    return fuzzySearchTerm
+
+def query(searchTerm, limit = 50):
     store = openStore()
-    searcher = None
+    reader=DirectoryReader.open(store)
     try:
-        reader=DirectoryReader.open(store)
+
         searcher = IndexSearcher(reader)
-        string= "(Title:{})^3 OR Body:{} OR (Tags:{})^2".format(searchTerm,searchTerm,searchTerm)
+        spellCorrectionSearchTerm = preProcessSearchTerm(searchTerm)
+        string= "(Title:{})^3 OR Body:{} OR (Tags:{})^2".format(spellCorrectionSearchTerm,spellCorrectionSearchTerm,spellCorrectionSearchTerm)
         query = QueryParser("Title", StandardAnalyzer()).parse(string)
 
-        topDocs = searcher.search(query, 50)
+        topDocs = searcher.search(query, limit)
         print(topDocs.scoreDocs)
         rank=1
         for i in topDocs.scoreDocs:
@@ -91,5 +112,48 @@ def query(searchTerm):
             rank+=1
     finally:
         reader.close()
-indexiets(context,False)
-# query('Statik Java')
+
+print("write '\q' to exit the program")
+while True:
+    ans1 = input("Do you want to 'index' data or ask a query answer with ('query' or 'index')?")
+    while ans1 != "query" and ans1 != "index" and ans1 != "\q":
+        ans1 = input("Answer with ('query' or 'index')")
+    if ans1 == "query":
+        ans2 = input("how many results do you want to receive?")
+        if ans2 == "\q":
+            break
+        try:
+            limit = int(ans2)
+        except ValueError:
+            print("you did not give a number so you will receive the top 50 results")
+            limit = 50
+        ans3 = input("give your search query")
+        if ans3 == "\q":
+            break
+        query(ans3, limit)
+    elif ans1 == "index":
+        ans2 = input("give the relative path to the xml file with the data")
+        if ans2 == "\q":
+            break
+        infile = ans2
+        ans3 = input("Do you want to index results without a title answer with ('yes' or 'no')?")
+        while ans3 != "yes" and ans3 != "no" and ans3 != "\q":
+            ans3 = input("Answer with ('yes' or 'no')")
+        if ans3 == "yes":
+            removeEmptyTitle = False
+        elif ans3 == "no":
+            removeEmptyTitle = True
+        else:
+            break
+        ans4 = input("how many documents do you want to index?")
+        if ans4 == "\q":
+            break
+        try:
+            limit = int(ans4)
+        except ValueError:
+            print("you did not give a number so you we will index the first 10 000 documents")
+            limit = 10000
+        indexiets(infile,removeEmptyTitle, limit)
+
+    else:
+        break
