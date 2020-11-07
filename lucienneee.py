@@ -34,7 +34,7 @@ def getWriter(store, analyzer=None, create=False):
     writer = IndexWriter(store, config)
 
     return writer
-def indexiets(infile,TitlemagNoneZijn, limit = 10000):
+def index(infile, TitlemagNoneZijn, limit = 10000):
     try:
         context = etree.iterparse(infile)
     except:
@@ -49,7 +49,7 @@ def indexiets(infile,TitlemagNoneZijn, limit = 10000):
         counter=0
         countwithtitle=0
         for event,elem in context:
-            if(counter>150000):
+            if(counter>limit):
                 break
             print(counter)
             print(countwithtitle)
@@ -83,9 +83,9 @@ def preProcessSearchTerm(searchTerm):
     for word in listOfWords:
 
         if len(word) < 5:
-            percent = (len(word)-1)/len(word)
+            percent = (len(word) - 1) / len(word)
         elif len(word) < 10:
-            percent = (len(word)-2)/len(word)
+            percent = (len(word) - 2) / len(word)
         else:
             percent = (len(word) - 3) / len(word)
         fuzzySearchTerm += "{}~{} ".format(word, percent-0.05)
@@ -153,7 +153,7 @@ while True:
         except ValueError:
             print("you did not give a number so you we will index the first 10 000 documents")
             limit = 10000
-        indexiets(infile,removeEmptyTitle, limit)
+        index(infile, removeEmptyTitle, limit)
 
     else:
         break
