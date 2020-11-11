@@ -141,6 +141,8 @@ while True:
         if ans3 == "\q":
             break
         query(ans3, limit)
+        print("Query Complete, use \q at anytime to exit the program")
+
     elif ans1 == "index":
         ans2 = input("give the relative path to the xml file with the data")
         if ans2 == "\q":
@@ -164,6 +166,7 @@ while True:
             print("you did not give a number so you we will index the first 10 000 documents")
             limit = 10000
         index(infile, removeEmptyTitle, limit)
+        print("Indexing Complete, use \q at anytime to exit the program")
 
     else:
         break
