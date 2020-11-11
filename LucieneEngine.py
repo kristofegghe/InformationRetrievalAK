@@ -13,16 +13,16 @@ from lxml import etree
 
 
 
-# https://code.activestate.com/recipes/410469-xml-as-dictionary/
 lucene.initVM(vmargs=['-Djava.awt.headless=true'])
 
 
-infile="../../../andy/Desktop/InformationRetrieval/pom.xml"
 
-counter=0
 
 def openStore():
     return SimpleFSDirectory(Paths.get("index/"))
+
+
+# getWriter van test_Pylucene.py, komt van examples van de officiele pylucene website
 def getWriter(store, analyzer=None, create=False):
     if analyzer is None:
         analyzer =StandardAnalyzer()
@@ -34,6 +34,12 @@ def getWriter(store, analyzer=None, create=False):
     writer = IndexWriter(store, config)
 
     return writer
+
+
+# combinatie van onze xml reading + regex html stripping + indexing van test_Pylucene.py
+# de 85 GB Xml inlezen gaf problemen dus hebben de fast_iter van de volgende solution op stackoverflow gebruikt
+# https://stackoverflow.com/questions/16724033/lxml-element-clear-and-access-childelements
+
 def index(infile, TitlemagNoneZijn, limit = 10000):
     try:
         context = etree.iterparse(infile)
@@ -51,13 +57,14 @@ def index(infile, TitlemagNoneZijn, limit = 10000):
         for event,elem in context:
             if(counter>limit):
                 break
-            print(counter)
-            print(countwithtitle)
+            ## debugging info om te kijken hoe snel er word ge indext
+            # print(counter)
+            # print(countwithtitle)
             counter+=1
             doc = Document()
             hasTitle=False
             for key in elem.attrib:
-                # print(key)
+                # neem een paar tags
                 if key in ["CreationDate","Score","Body","CommentCount","LastActivityDate","Id","Tags","Title","AnswerCount","FavoriteCount"]:
                     if key =="Title":
                         # print(elem.attrib[key])
@@ -77,6 +84,7 @@ def index(infile, TitlemagNoneZijn, limit = 10000):
         del context
         writer.close()
 
+# splits termps and fuzzify  met -0.05
 def preProcessSearchTerm(searchTerm):
     fuzzySearchTerm = ""
     listOfWords=searchTerm.split()
@@ -92,6 +100,8 @@ def preProcessSearchTerm(searchTerm):
 
     return fuzzySearchTerm
 
+# execute the query once again according to test_pyLucene.py, while boosting title and tags and only searching in body title tags
+#  we dont use other tags, but if we wanted to we only need to change this function a bit
 def query(searchTerm, limit = 50):
     store = openStore()
     reader=DirectoryReader.open(store)
